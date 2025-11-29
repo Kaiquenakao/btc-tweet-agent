@@ -14,3 +14,8 @@ variable "subnet_id" {
 variable "vpc_id" {
   type = string
 }
+
+variable "sqs_arn" {
+  type        = string
+  description = "ARN da fila SQS"
+}

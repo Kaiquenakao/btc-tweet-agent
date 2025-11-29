@@ -4,9 +4,17 @@ variable "aws_region" {
 }
 
 variable "ami_id" {
-  type = string
+  type    = string
+  default = "ami-0c0039bfde8cbfe27"
 }
 
 variable "instance_type" {
-  type = string
+  type    = string
+  default = "t2.micro"
+}
+
+
+variable "sqs_arn" {
+  type    = string
+  default = "*"
 }
