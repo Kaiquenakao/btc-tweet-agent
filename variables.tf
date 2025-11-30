@@ -12,9 +12,3 @@ variable "instance_type" {
   type    = string
   default = "t2.micro"
 }
-
-
-variable "sqs_arn" {
-  type    = string
-  default = "*"
-}
