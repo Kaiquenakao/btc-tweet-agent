@@ -18,3 +18,10 @@ module "sqs" {
 
   queue_name = "btc-tweet-agent"
 }
+
+module "ssm" {
+  source   = "./infra/ssm"
+  api_hash = "/btc_tweet_agent/api_hash"
+  api_id   = "/btc_tweet_agent/api_id"
+  channel  = "/btc_tweet_agent/channel"
+}
