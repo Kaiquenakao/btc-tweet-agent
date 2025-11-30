@@ -19,3 +19,8 @@ variable "sqs_arn" {
   type        = string
   description = "ARN da fila SQS"
 }
+
+variable "region" {
+  type    = string
+  default = "sa-east-1"
+}
