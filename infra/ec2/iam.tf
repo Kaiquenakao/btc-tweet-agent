@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_role" "ec2_role" {
   name = "ec2-send-sqs-role"
 
@@ -14,20 +16,31 @@ resource "aws_iam_role" "ec2_role" {
 }
 
 resource "aws_iam_policy" "sqs_send_policy" {
-  name        = "ec2-send-message-to-sqs"
+  name        = "btc-tweet-agent"
   description = "Allows EC2 to send messages to SQS"
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "sqs:SendMessage",
-        "sqs:GetQueueUrl",
-        "sqs:GetQueueAttributes"
-      ]
-      Resource = var.sqs_arn
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage",
+          "sqs:GetQueueUrl",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = var.sqs_arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ]
+        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/btc_tweet_agent/*"
+      }
+    ]
   })
 }
 
