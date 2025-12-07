@@ -29,6 +29,10 @@ resource "aws_instance" "server" {
 
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
+  user_data = templatefile("${path.module}/agent-startup.sh", {
+    region = var.region
+  })
+
   metadata_options {
     http_tokens = "required"
   }

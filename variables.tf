@@ -12,3 +12,8 @@ variable "instance_type" {
   type    = string
   default = "t3.nano"
 }
+
+variable "region" {
+  type    = string
+  default = "sa-east-1"
+}
