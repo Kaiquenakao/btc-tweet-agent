@@ -16,3 +16,10 @@ variable "channel" {
   type        = string
   default     = "/btc_tweet_agent/channel"
 }
+
+
+variable "queue_name" {
+  description = ""
+  type        = string
+  default     = "/btc_tweet_agent/queue_name"
+}
