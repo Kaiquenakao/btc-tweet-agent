@@ -15,3 +15,9 @@ resource "aws_ssm_parameter" "channel" {
   type  = "String"
   value = "value"
 }
+
+resource "aws_ssm_parameter" "queue_name" {
+  name  = var.queue_name
+  type  = "String"
+  value = "value"
+}
