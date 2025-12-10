@@ -21,3 +21,10 @@ resource "aws_ssm_parameter" "queue_name" {
   type  = "String"
   value = "value"
 }
+
+
+resource "aws_ssm_parameter" "api_key" {
+  name  = var.api_key
+  type  = "String"
+  value = "value"
+}
