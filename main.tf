@@ -26,4 +26,5 @@ module "ssm" {
   channel    = "/btc_tweet_agent/channel"
   queue_name = "/btc_tweet_agent/queue_name"
   api_key    = "/btc_tweet_agent/api_key"
+  table_name = "/btc_tweet_agent/table_name"
 }
