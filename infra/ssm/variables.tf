@@ -29,3 +29,9 @@ variable "api_key" {
   type        = string
   default     = "/btc_tweet_agent/api_key"
 }
+
+variable "table_name" {
+  description = ""
+  type        = string
+  default     = "/btc_tweet_agent/table_name"
+}
