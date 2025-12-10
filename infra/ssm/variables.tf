@@ -23,3 +23,9 @@ variable "queue_name" {
   type        = string
   default     = "/btc_tweet_agent/queue_name"
 }
+
+variable "api_key" {
+  description = ""
+  type        = string
+  default     = "/btc_tweet_agent/api_key"
+}
