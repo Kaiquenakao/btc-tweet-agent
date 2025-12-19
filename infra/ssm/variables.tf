@@ -35,3 +35,8 @@ variable "table_name" {
   type        = string
   default     = "/btc_tweet_agent/table_name"
 }
+variable "session_name" {
+  description = ""
+  type        = string
+  default     = "/btc_tweet_agent/session_name"
+}

@@ -1,97 +1,93 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Starting Telegram Watcher Agent"
+# Log de tudo para debug
+exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
+
+echo "🚀 Starting Telegram Watcher Agent Setup"
 
 APP_DIR="/opt/telegram-watcher"
 REGION="${region}"
 
-# -----------------------------
-# Atualiza sistema e instala dependências
-# -----------------------------
+# 1. Instalação usando o gerenciador de pacotes do Amazon Linux 2023
 yum update -y
-yum install -y python3 awscli
-pip3 install --upgrade pip
-pip3 install telethon boto3
+yum install -y python3 python3-pip awscli
 
-# -----------------------------
-# Cria diretório da aplicação
-# -----------------------------
+# 2. Instala as dependências usando o módulo do python para evitar erro de "command not found"
+python3 -m pip install telethon boto3
+
 mkdir -p $APP_DIR
+cd $APP_DIR
 
-# -----------------------------
-# Cria o agent.py
-# -----------------------------
+# 3. Busca Parâmetros no SSM
+echo "Reading parameters from SSM..."
+API_ID=$(aws ssm get-parameter --name "/btc_tweet_agent/api_id" --region "sa-east-1" --query "Parameter.Value" --output text)
+API_HASH=$(aws ssm get-parameter --name "/btc_tweet_agent/api_hash" --with-decryption --region "sa-east-1" --query "Parameter.Value" --output text)
+CHANNELS=$(aws ssm get-parameter --name "/btc_tweet_agent/channel" --region "sa-east-1" --query "Parameter.Value" --output text)
+SESSION_STR=$(aws ssm get-parameter --name "/btc_tweet_agent/session_name" --with-decryption --region "sa-east-1" --query "Parameter.Value" --output text)
+
+echo "Parameters retrieved successfully."
+echo "API_ID: $API_ID"
+echo "CHANNELS: $CHANNELS"
+
+# 4. Cria o arquivo Python
 cat << 'EOF' > $APP_DIR/agent.py
 from telethon import TelegramClient, events
+from telethon.sessions import StringSession
 import asyncio
-import logging
 import os
+import logging
 
-logging.basicConfig(
-    format="[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s",
-    level=logging.WARNING
-)
+logging.basicConfig(level=logging.INFO)
 
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
-SESSION_NAME = "session"
+CHANNELS = os.environ["CHANNELS"].split(",")
+SESSION_STRING = os.environ.get("SESSION_STRING")
 
-channels_env = os.environ.get("CHANNELS", "")
-if not channels_env:
-    print("❌ Variável CHANNELS não definida")
-    exit(1)
-
-CHANNELS = channels_env.split(",")
-
-client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
+client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
 
 @client.on(events.NewMessage(chats=CHANNELS))
-async def handler_new_message(event):
+async def handler(event):
     try:
-        canal_origem = f"@{event.chat.username}"
-    except Exception:
-        canal_origem = "Canal desconhecido"
-
-    print("="*50)
-    print(f"📥 NOVA MENSAGEM DE: {canal_origem}")
-    if event.raw_text:
-        print(event.raw_text[:300])
-    else:
-        print("Mensagem contém mídia.")
-    print("="*50)
+        chat = await event.get_chat()
+        sender = getattr(chat, 'username', 'Canal Privado')
+        print(f"📥 MENSAGEM: @{sender}: {event.raw_text}")
+    except Exception as e:
+        print(f"Erro: {e}")
 
 async def main():
     await client.start()
+    print("✅ Bot Conectado!")
     await client.run_until_disconnected()
 
 if __name__ == "__main__":
     asyncio.run(main())
 EOF
 
-# -----------------------------
-# Busca parâmetros no SSM
-# -----------------------------
-export API_ID=$(aws ssm get-parameter \
-  --name "/btc_tweet_agent/api_id" \
-  --region "$REGION" \
-  --query "Parameter.Value" \
-  --output text)
+# 5. Configuração do Serviço
+cat <<EOF > /etc/systemd/system/telegram-agent.service
+[Unit]
+Description=Telegram Watcher Agent
+After=network.target
 
-export API_HASH=$(aws ssm get-parameter \
-  --name "/btc_tweet_agent/api_hash" \
-  --with-decryption \
-  --region "$REGION" \
-  --query "Parameter.Value" \
-  --output text)
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$APP_DIR
+Environment="API_ID=$API_ID"
+Environment="API_HASH=$API_HASH"
+Environment="CHANNELS=$CHANNELS"
+Environment="SESSION_STRING=$SESSION_STR"
+ExecStart=/usr/bin/python3 $APP_DIR/agent.py
+Restart=always
 
-export CHANNELS=$(aws ssm get-parameter \
-  --name "/btc_tweet_agent/channel" \
-  --region "$REGION" \
-  --query "Parameter.Value" \
-  --output text)
+[Install]
+WantedBy=multi-user.target
+EOF
 
-# -----------------------------
-# Roda o bot em background
-# -----------------------------
-nohup python3 $APP_DIR/agent.py > $APP_DIR/agent.log 2>&1 &
+systemctl daemon-reload
+systemctl enable telegram-agent
+systemctl start telegram-agent
+
+echo "✅ Setup Finalizado com Sucesso!"
