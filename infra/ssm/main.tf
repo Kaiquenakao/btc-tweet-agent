@@ -28,3 +28,15 @@ resource "aws_ssm_parameter" "api_key" {
   type  = "String"
   value = "value"
 }
+
+resource "aws_ssm_parameter" "table_name" {
+  name  = var.table_name
+  type  = "String"
+  value = "value"
+}
+
+resource "aws_ssm_parameter" "session_name" {
+  name  = "/btc_tweet_agent/session_name"
+  type  = "SecureString"
+  value = "value"
+}
