@@ -24,7 +24,7 @@ echo "Reading parameters from SSM..."
 API_ID=$(aws ssm get-parameter --name "/btc_tweet_agent/api_id" --region "sa-east-1" --query "Parameter.Value" --output text)
 API_HASH=$(aws ssm get-parameter --name "/btc_tweet_agent/api_hash" --with-decryption --region "sa-east-1" --query "Parameter.Value" --output text)
 CHANNELS=$(aws ssm get-parameter --name "/btc_tweet_agent/channel" --region "sa-east-1" --query "Parameter.Value" --output text)
-SESSION_STR=$(aws ssm get-parameter --name "/btc_tweet_agent/session_name" --with-decryption --region "sa-east-1" --query "Parameter.Value" --output text)
+SESSION_NAME=$(aws ssm get-parameter --name "/btc_tweet_agent/session_name" --with-decryption --region "sa-east-1" --query "Parameter.Value" --output text)
 
 echo "Parameters retrieved successfully."
 echo "API_ID: $API_ID"
@@ -43,9 +43,14 @@ logging.basicConfig(level=logging.INFO)
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
 CHANNELS = os.environ["CHANNELS"].split(",")
-SESSION_STRING = os.environ.get("SESSION_STRING")
+SESSION_NAME = os.environ.get("SESSION_NAME")
 
-client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+logging.info(f"Watching channels: {CHANNELS}")
+logging.info(f"Using session: {SESSION_NAME}")
+logging.info(f"API_ID: {API_ID}")
+logging.info(f"API_HASH: {API_HASH}")
+
+client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
 
 @client.on(events.NewMessage(chats=CHANNELS))
 async def handler(event):
@@ -78,7 +83,7 @@ WorkingDirectory=$APP_DIR
 Environment="API_ID=$API_ID"
 Environment="API_HASH=$API_HASH"
 Environment="CHANNELS=$CHANNELS"
-Environment="SESSION_STRING=$SESSION_STR"
+Environment="SESSION_NAME=$SESSION_NAME"
 ExecStart=/usr/bin/python3 $APP_DIR/agent.py
 Restart=always
 
