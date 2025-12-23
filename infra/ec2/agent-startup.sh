@@ -98,7 +98,7 @@ async def handler_new_message(event):
         }
         sqs.send_message(
             QueueUrl=QUEUE_NAME,
-            MessageBody=json.dumps(msg),
+            MessageBody=json.dumps(msg, ensure_ascii=False),
             MessageGroupId="cripto",
             MessageDeduplicationId=str(uuid.uuid4())
         )
