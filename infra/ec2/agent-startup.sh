@@ -23,10 +23,13 @@ API_ID=$(aws ssm get-parameter --name "/btc_tweet_agent/api_id" --region "sa-eas
 API_HASH=$(aws ssm get-parameter --name "/btc_tweet_agent/api_hash" --with-decryption --region "sa-east-1" --query "Parameter.Value" --output text)
 CHANNELS=$(aws ssm get-parameter --name "/btc_tweet_agent/channel" --region "sa-east-1" --query "Parameter.Value" --output text)
 SESSION_ID=$(aws ssm get-parameter --name "/btc_tweet_agent/session_id" --with-decryption --region "sa-east-1" --query "Parameter.Value" --output text)
+QUEUE_NAME=$(aws ssm get-parameter --name "/btc_tweet_agent/queue_name" --region "sa-east-1" --query "Parameter.Value" --output text)
 
 echo "Parameters retrieved successfully."
 echo "API_ID: $API_ID"
 echo "CHANNELS: $CHANNELS"
+echo "SESSION_ID: $SESSION_ID"
+echo "QUEUE_NAME: $QUEUE_NAME"
 
 cat << 'EOF' > $APP_DIR/agent.py
 import os
@@ -34,6 +37,9 @@ import asyncio
 import logging
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
+import uuid
+import boto3
+import json
 
 # Configura logging para systemd
 logging.basicConfig(
@@ -47,6 +53,7 @@ try:
     API_HASH = os.environ["API_HASH"]
     CHANNELS = os.environ["CHANNELS"].split(",")
     SESSION_ID = os.environ.get("SESSION_ID")
+    QUEUE_NAME = os.environ.get("QUEUE_NAME")
 except KeyError as e:
     logging.exception(f"Variável de ambiente faltando: {e}")
     raise SystemExit(1)
@@ -58,10 +65,13 @@ logging.info(f"Watching channels: {CHANNELS}")
 logging.info(f"Using session: {SESSION_ID}")
 logging.info(f"API_ID: {API_ID}")
 logging.info(f"API_HASH: {API_HASH}")
+logging.info(f"QUEUE_NAME: {QUEUE_NAME}")
 
 # Cria cliente Telegram
 client = TelegramClient(StringSession(SESSION_ID), API_ID, API_HASH)
 logging.info(f"Cliente Telegram criado com sucesso. {client}")
+
+sqs = boto3.client("sqs", region_name="sa-east-1")
 
 resolved_channels = {}
 
@@ -82,6 +92,16 @@ async def handler_new_message(event):
 
     if mensagem_text:
         logging.info(f"Texto (início):\n{mensagem_text}...")
+        msg = {
+            "channel": canal_origem,
+            "message": mensagem_text
+        }
+        sqs.send_message(
+            QueueUrl=QUEUE_NAME,
+            MessageBody=json.dumps(msg),
+            MessageGroupId="cripto",
+            MessageDeduplicationId=str(uuid.uuid4())
+        )
     else:
         logging.info("Mensagem contém mídia (foto, vídeo, etc).")
 
@@ -152,6 +172,7 @@ Environment="API_ID=$API_ID"
 Environment="API_HASH=$API_HASH"
 Environment="CHANNELS=$CHANNELS"
 Environment="SESSION_ID=$SESSION_ID"
+Environment="QUEUE_NAME=$QUEUE_NAME"
 ExecStart=/usr/bin/python3 $APP_DIR/agent.py
 Restart=always
 
