@@ -35,8 +35,14 @@ variable "table_name" {
   type        = string
   default     = "/btc_tweet_agent/table_name"
 }
-variable "session_name" {
+variable "session_id" {
   description = ""
   type        = string
-  default     = "/btc_tweet_agent/session_name"
+  default     = "/btc_tweet_agent/session_id"
+}
+
+variable "prompt" {
+  description = ""
+  type        = string
+  default     = "/btc_tweet_agent/prompt"
 }
