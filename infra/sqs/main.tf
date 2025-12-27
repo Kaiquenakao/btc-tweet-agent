@@ -4,6 +4,8 @@ resource "aws_sqs_queue" "btc_tweet_agent_queue" {
   fifo_queue                  = true
   content_based_deduplication = true
 
+  visibility_timeout_seconds = 120
+
   tags = {
     Name = var.queue_name
   }

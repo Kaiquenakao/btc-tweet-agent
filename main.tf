@@ -28,4 +28,11 @@ module "ssm" {
   api_key    = "/btc_tweet_agent/api_key"
   table_name = "/btc_tweet_agent/table_name"
   session_id = "/btc_tweet_agent/session_id"
+  prompt     = "/btc_tweet_agent/prompt"
+}
+
+
+module "lambda" {
+  source  = "./infra/lambda"
+  sqs_arn = module.sqs.sqs_arn
 }
