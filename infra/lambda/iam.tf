@@ -37,6 +37,11 @@ resource "aws_iam_policy" "lambda_sns_policy" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "lamda_ssm" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+}
+
 resource "aws_iam_role_policy_attachment" "lambda_sns" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.lambda_sns_policy.arn
