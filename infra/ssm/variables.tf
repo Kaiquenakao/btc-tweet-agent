@@ -46,3 +46,9 @@ variable "prompt" {
   type        = string
   default     = "/btc_tweet_agent/prompt"
 }
+
+variable "openai_api_key" {
+  description = ""
+  type        = string
+  default     = "/btc_tweet_agent/openai_api_key"
+}

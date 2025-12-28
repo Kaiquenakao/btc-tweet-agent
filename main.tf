@@ -20,15 +20,16 @@ module "sqs" {
 }
 
 module "ssm" {
-  source     = "./infra/ssm"
-  api_hash   = "/btc_tweet_agent/api_hash"
-  api_id     = "/btc_tweet_agent/api_id"
-  channel    = "/btc_tweet_agent/channel"
-  queue_name = "/btc_tweet_agent/queue_name"
-  api_key    = "/btc_tweet_agent/api_key"
-  table_name = "/btc_tweet_agent/table_name"
-  session_id = "/btc_tweet_agent/session_id"
-  prompt     = "/btc_tweet_agent/prompt"
+  source         = "./infra/ssm"
+  api_hash       = "/btc_tweet_agent/api_hash"
+  api_id         = "/btc_tweet_agent/api_id"
+  channel        = "/btc_tweet_agent/channel"
+  queue_name     = "/btc_tweet_agent/queue_name"
+  api_key        = "/btc_tweet_agent/api_key"
+  table_name     = "/btc_tweet_agent/table_name"
+  session_id     = "/btc_tweet_agent/session_id"
+  prompt         = "/btc_tweet_agent/prompt"
+  openai_api_key = "/btc_tweet_agent/openai_api_key"
 }
 
 
