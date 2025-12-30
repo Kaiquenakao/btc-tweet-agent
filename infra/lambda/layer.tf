@@ -1,32 +1,45 @@
 resource "null_resource" "install_dependencies" {
   provisioner "local-exec" {
-    interpreter = ["PowerShell", "-Command"]
     command     = <<EOT
-      $basePath = "${path.module}/build/layers/openai/python"
-      # O -Force garante que a árvore de diretórios seja criada sem erro
-      if (!(Test-Path $basePath)) {
-        New-Item -ItemType Directory -Force -Path $basePath
-      }
-      pip install -r "${path.module}/requirements.txt" -t $basePath
-    EOT
+if (Test-Path build) { Remove-Item build -Recurse -Force }
+New-Item -ItemType Directory -Path build\python
+pip install -r requirements.txt -t build\python
+EOT
+    working_dir = path.module
+    interpreter = ["PowerShell", "-Command"]
   }
 
   triggers = {
-    requirements_hash = filebase64sha256("${path.module}/requirements.txt")
+    requirements_hash = sha256(file("${path.module}/requirements.txt"))
   }
 }
 
-data "archive_file" "openai_layer_zip" {
+data "archive_file" "lambda_layer_zip" {
   type        = "zip"
-  source_dir  = fileexists("${path.module}/build/layers/openai/python/openai/__init__.py") ? "${path.module}/build/layers/openai" : "${path.module}/src"
-  output_path = "${path.module}/build/openai_layer.zip"
+  source_dir  = "${path.module}/build"
+  output_path = "${path.module}/lambda_layer.zip"
 
   depends_on = [null_resource.install_dependencies]
 }
 
-resource "aws_lambda_layer_version" "openai_layer" {
-  filename            = data.archive_file.openai_layer_zip.output_path
-  layer_name          = "openai_library"
+resource "aws_lambda_layer_version" "lambda_layer" {
+  filename            = data.archive_file.lambda_layer_zip.output_path
+  layer_name          = "btc_tweet_agent_layer"
   compatible_runtimes = ["python3.11"]
-  source_code_hash    = data.archive_file.openai_layer_zip.output_base64sha256
+  source_code_hash    = data.archive_file.lambda_layer_zip.output_base64sha256
+}
+
+output "lambda_layer_arn" {
+  description = "ARN da Lambda Layer criada"
+  value       = aws_lambda_layer_version.lambda_layer.arn
+}
+
+output "lambda_layer_version" {
+  description = "Versão da Lambda Layer"
+  value       = aws_lambda_layer_version.lambda_layer.version
+}
+
+output "lambda_layer_name" {
+  description = "Nome da Lambda Layer"
+  value       = aws_lambda_layer_version.lambda_layer.layer_name
 }

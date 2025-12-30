@@ -216,3 +216,4 @@ infra/lambda/__pycache__/
 infra/lambda/lambda_function.pyc
 infra/lambda/layers
 infra/lambda/build
+infra/lambda/lambda_layer*
