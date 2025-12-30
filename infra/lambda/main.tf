@@ -12,7 +12,7 @@ resource "aws_lambda_function" "sqs_processor" {
   runtime          = "python3.11"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
-  layers = [aws_lambda_layer_version.openai_layer.arn]
+  layers = [aws_lambda_layer_version.lambda_layer.arn]
 
   timeout     = 120
   memory_size = 2000

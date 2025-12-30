@@ -1,45 +1,49 @@
 import json
 import boto3
-from openai import OpenAI
+import openai
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def handler(event, context):
-    print("Iniciando processamento de mensagens SQS...")
-    print(event)
+    logger.info("Iniciando processamento de mensagens SQS...")
+    logger.info(event)
 
     for record in event["Records"]:
         message_body = record["body"]
-        print(f"Mensagem recebida: {message_body}")
+        logger.info(f"Mensagem recebida: {message_body}")
+        message_body = json.loads(message_body)
 
     ssm_client = boto3.client("ssm")
     parameter = ssm_client.get_parameter(
         Name="/btc_tweet_agent/openai_api_key", WithDecryption=True
     )
     openai_api_key = parameter["Parameter"]["Value"]
-    print(f"OpenAI API Key recuperada: {openai_api_key}")
+    logger.info(f"OpenAI API Key recuperada: {openai_api_key}")
 
     parameter = ssm_client.get_parameter(
         Name="/btc_tweet_agent/prompt", WithDecryption=True
     )
 
     prompt = parameter["Parameter"]["Value"]
-    print(f"Prompt recuperado: {prompt}")
+    logger.info(f"Prompt recuperado: {prompt}")
+    logger.info("Enviando mensagem para OpenAI...")
 
-    client = OpenAI(api_key=openai_api_key)
+    openai.api_key = openai_api_key
 
-    response = client.chat.completions.create(
-        model="gpt-4",
+    response = openai.ChatCompletion.create(
+        model="gpt-4.1",
         messages=[
-            {
-                "role": "system",
-                "content": prompt,
-            },
-            {
-                "role": "user",
-                "content": message_body["message"],
-            },
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": message_body["message"]},
         ],
     )
-    print("Resposta do OpenAI:")
-    print(response.choices[0].message.content)
+
+    data = json.loads(response.choices[0].message["content"])
+    data = {"noticia": message_body["message"], **data}
+
+    logger.info(f"Resposta do OpenAI: {data}")
+
     return {"statusCode": 200, "body": json.dumps("Processado com sucesso!")}
