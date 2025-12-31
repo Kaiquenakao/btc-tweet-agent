@@ -37,3 +37,9 @@ module "lambda" {
   source  = "./infra/lambda"
   sqs_arn = module.sqs.sqs_arn
 }
+
+module "sns" {
+  source = "./infra/sns"
+
+  topic_name = "btc_tweet_agent_topic"
+}
